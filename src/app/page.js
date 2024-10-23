@@ -18,6 +18,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { IoMdEye, IoMdTime } from "react-icons/io";
 
 const YouTubeCaptionViewer = () => {
   const [keyword, setKeyword] = useState("");
@@ -55,6 +56,12 @@ const YouTubeCaptionViewer = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatDuration = (duration) => {
+    const minutes = parseInt(duration.match(/(\d+)M/)?.[1] || "0", 10);
+    const seconds = parseInt(duration.match(/(\d+)S/)?.[1] || "0", 10);
+    return `${minutes}mins ${seconds}secs`;
   };
 
   console.log(videos);
@@ -110,9 +117,20 @@ const YouTubeCaptionViewer = () => {
                       Watch
                     </Button>
                   </Flex>
-                  <Text fontSize="sm" color="gray.500">
-                    Duration: {video.duration}
-                  </Text>
+                  <Flex gap={4}>
+                    <Flex alignItems="center" gap={1}>
+                      <IoMdTime color="#FF0000" />
+                      <Text fontSize="sm" color="gray.500">
+                        {formatDuration(video.duration)}
+                      </Text>
+                    </Flex>
+                    <Flex alignItems="center" gap={1}>
+                      <IoMdEye color="#FF0000" />
+                      <Text fontSize="sm" color="gray.500">
+                        {parseInt(video.viewCount).toLocaleString()}
+                      </Text>
+                    </Flex>
+                  </Flex>
                 </CardHeader>
                 <CardBody>
                   <Stack spacing={4}>

@@ -30,21 +30,29 @@ export async function POST(req) {
     const searchResponse = await youtube.search.list({
       part: ["id", "snippet"],
       q: keyword,
-      maxResults: 10,
+      maxResults: 250, // Increased to 250
       order: "date",
       publishedAfter: timeAgo.toISOString(),
       type: ["video"],
     });
 
-    const videos = await Promise.all(
-      searchResponse.data.items.map(async (item) => {
-        const videoId = item.id.videoId;
+    // Get video details including view count
+    const videoDetailsResponse = await youtube.videos.list({
+      part: ["statistics", "snippet", "contentDetails"],
+      id: searchResponse.data.items.map((item) => item.id.videoId),
+    });
 
-        // Get video details
-        const videoResponse = await youtube.videos.list({
-          part: ["contentDetails", "snippet"],
-          id: [videoId],
-        });
+    // Sort videos by view count and get top 10
+    const topVideos = videoDetailsResponse.data.items
+      .sort(
+        (a, b) =>
+          parseInt(b.statistics.viewCount) - parseInt(a.statistics.viewCount)
+      )
+      .slice(0, 10);
+
+    const videos = await Promise.all(
+      topVideos.map(async (videoDetails) => {
+        const videoId = videoDetails.id;
 
         // Get captions
         let captions = "";
@@ -64,12 +72,12 @@ export async function POST(req) {
           console.error(`Error fetching captions for video ${videoId}:`, error);
         }
 
-        const videoDetails = videoResponse.data.items[0];
-        console.log(videoDetails);
         return {
           name: videoDetails.snippet.title,
           description: videoDetails.snippet.description,
           duration: videoDetails.contentDetails.duration.replace("PT", ""),
+          viewCount: videoDetails.statistics.viewCount,
+          link: `https://www.youtube.com/watch?v=${videoId}`,
           captions,
         };
       })
