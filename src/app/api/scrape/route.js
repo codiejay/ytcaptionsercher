@@ -1,4 +1,3 @@
-// pages/api/youtube.js
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
 
@@ -22,27 +21,28 @@ export async function POST(req) {
       );
     }
 
-    // Kinda calculate 24 hours ago from now
+    // Calculate 24 hours ago
     const timeAgo = new Date();
     timeAgo.setHours(timeAgo.getHours() - 24);
 
-    // Search for videos
+    // Search for videos - reduced to 50 results initially
     const searchResponse = await youtube.search.list({
-      part: ["id", "snippet"],
+      part: ["id"], // Removed snippet to save quota
       q: keyword,
-      maxResults: 250, // Increased to 250
+      maxResults: 50, // Reduced from 250
       order: "date",
       publishedAfter: timeAgo.toISOString(),
       type: ["video"],
     });
 
-    // Get video details including view count
+    // Get video details in batches of 50
+    const videoIds = searchResponse.data.items.map((item) => item.id.videoId);
     const videoDetailsResponse = await youtube.videos.list({
       part: ["statistics", "snippet", "contentDetails"],
-      id: searchResponse.data.items.map((item) => item.id.videoId),
+      id: videoIds,
     });
 
-    // Sort videos by view count and get top 10
+    // Sort and get top 10 before fetching captions
     const topVideos = videoDetailsResponse.data.items
       .sort(
         (a, b) =>
@@ -54,7 +54,19 @@ export async function POST(req) {
       topVideos.map(async (videoDetails) => {
         const videoId = videoDetails.id;
 
-        // Get captions
+        // Optional: Only fetch captions if viewCount is above certain threshold
+        if (parseInt(videoDetails.statistics.viewCount) < 1000) {
+          return {
+            name: videoDetails.snippet.title,
+            description: videoDetails.snippet.description,
+            duration: videoDetails.contentDetails.duration.replace("PT", ""),
+            viewCount: videoDetails.statistics.viewCount,
+            link: `https://www.youtube.com/watch?v=${videoId}`,
+            captions: "",
+          };
+        }
+
+        // Get captions only for promising videos
         let captions = "";
         try {
           const captionResponse = await youtube.captions.list({
