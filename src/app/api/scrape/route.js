@@ -58,10 +58,13 @@ export async function POST(req) {
         return {
           name: videoDetails.snippet.title,
           description: videoDetails.snippet.description,
-          duration: videoDetails.contentDetails.duration.replace("PT", ""),
+          publishedAt: new Date(
+            videoDetails.snippet.publishedAt
+          ).toLocaleString(),
           viewCount: videoDetails.statistics.viewCount,
           link: `https://www.youtube.com/watch?v=${videoId}`,
           captions,
+          videoDetail: videoDetails,
         };
       })
     );

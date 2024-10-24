@@ -60,6 +60,7 @@ const YouTubeCaptionViewer = () => {
 
       const data = await response.json();
       setVideos(data.videos);
+      console.log(data.videos);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -68,9 +69,10 @@ const YouTubeCaptionViewer = () => {
   };
 
   const formatDuration = (duration) => {
-    const minutes = parseInt(duration.match(/(\d+)M/)?.[1] || "0", 10);
-    const seconds = parseInt(duration.match(/(\d+)S/)?.[1] || "0", 10);
-    return `${minutes}mins ${seconds}secs`;
+    console.log(duration);
+    // const minutes = parseInt(duration.match(/(\d+)M/)?.[1] || "0", 10);
+    // const seconds = parseInt(duration.match(/(\d+)S/)?.[1] || "0", 10);
+    return `Cool`;
   };
 
   const toggleShowMore = (index) => {
@@ -78,6 +80,17 @@ const YouTubeCaptionViewer = () => {
       ...prevState,
       [index]: !prevState[index],
     }));
+  };
+
+  const formatPublishedDate = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   return (
@@ -113,94 +126,91 @@ const YouTubeCaptionViewer = () => {
           )}
 
           <VStack mt={6} spacing={4} align="stretch">
-            {videos.map(
-              (video, index) => (
-                // I want to console log the video.captions
-                console.log(video.captions),
-                (
-                  <Card key={index}>
-                    <CardHeader>
-                      <Flex justifyContent="space-between" alignItems="center">
-                        <Heading size="md">{video.name}</Heading>
-                        <Button
-                          as="a"
-                          href={video.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          size="sm"
-                          rightIcon={<ExternalLinkIcon />}
-                          bg="#FF0000"
-                          color="white"
-                          _hover={{ bg: "#FF0000", opacity: 0.8 }}
-                        >
-                          Watch
-                        </Button>
-                      </Flex>
-                      <Flex gap={4}>
-                        <Flex alignItems="center" gap={1}>
-                          <IoMdTime color="#FF0000" />
-                          <Text fontSize="sm" color="gray.500">
-                            {formatDuration(video.duration)}
-                          </Text>
-                        </Flex>
-                        <Flex alignItems="center" gap={1}>
-                          <IoMdEye color="#FF0000" />
-                          <Text fontSize="sm" color="gray.500">
-                            {parseInt(video.viewCount).toLocaleString()}
-                          </Text>
-                        </Flex>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody>
-                      <Stack spacing={4}>
-                        <Box>
-                          <Heading size="sm" mb={2}>
-                            Description:
-                          </Heading>
-                          <Text
-                            fontSize="sm"
-                            whiteSpace="pre-wrap"
-                            noOfLines={showFullText[index] ? undefined : 5}
-                          >
-                            {video.description}
-                          </Text>
-                          <Button
-                            size="sm"
-                            onClick={() => toggleShowMore(index)}
-                            variant="link"
-                            colorScheme="blue"
-                          >
-                            {showFullText[index] ? "Show Less" : "Show More"}
-                          </Button>
-                        </Box>
-                        <Box>
-                          <Heading size="sm" mb={2}>
-                            Captions:
-                          </Heading>
-                          <Text
-                            fontSize="sm"
-                            whiteSpace="pre-wrap"
-                            noOfLines={showFullText[index] ? undefined : 5}
-                          >
-                            {video.captions
-                              ? decodeHtmlEntities(video.captions)
-                              : "No captions available"}
-                          </Text>
-                          <Button
-                            size="sm"
-                            onClick={() => toggleShowMore(index)}
-                            variant="link"
-                            colorScheme="blue"
-                          >
-                            {showFullText[index] ? "Show Less" : "Show More"}
-                          </Button>
-                        </Box>
-                      </Stack>
-                    </CardBody>
-                  </Card>
-                )
-              )
-            )}
+            {videos.map((video, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <Flex justifyContent="space-between" alignItems="center">
+                    <Heading size="md">{video.name}</Heading>
+                    <Button
+                      as="a"
+                      href={video.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="sm"
+                      rightIcon={<ExternalLinkIcon />}
+                      bg="#FF0000"
+                      color="white"
+                      _hover={{ bg: "#FF0000", opacity: 0.8 }}
+                    >
+                      Watch
+                    </Button>
+                  </Flex>
+                  <Flex gap={4}>
+                    <Flex alignItems="center" gap={1}>
+                      <IoMdTime color="#FF0000" />
+                      <Text fontSize="sm" color="gray.500">
+                        {formatDuration(video.duration)}
+                      </Text>
+                    </Flex>
+                    <Flex alignItems="center" gap={1}>
+                      <IoMdEye color="#FF0000" />
+                      <Text fontSize="sm" color="gray.500">
+                        {parseInt(video.viewCount).toLocaleString()}
+                      </Text>
+                    </Flex>
+                    <Text fontSize="sm" color="gray.500">
+                      Published: {formatPublishedDate(video.publishedAt)}
+                    </Text>
+                  </Flex>
+                </CardHeader>
+                <CardBody>
+                  <Stack spacing={4}>
+                    <Box>
+                      <Heading size="sm" mb={2}>
+                        Description:
+                      </Heading>
+                      <Text
+                        fontSize="sm"
+                        whiteSpace="pre-wrap"
+                        noOfLines={showFullText[index] ? undefined : 5}
+                      >
+                        {video.description}
+                      </Text>
+                      <Button
+                        size="sm"
+                        onClick={() => toggleShowMore(index)}
+                        variant="link"
+                        colorScheme="blue"
+                      >
+                        {showFullText[index] ? "Show Less" : "Show More"}
+                      </Button>
+                    </Box>
+                    <Box>
+                      <Heading size="sm" mb={2}>
+                        Captions:
+                      </Heading>
+                      <Text
+                        fontSize="sm"
+                        whiteSpace="pre-wrap"
+                        noOfLines={showFullText[index] ? undefined : 5}
+                      >
+                        {video.captions
+                          ? decodeHtmlEntities(video.captions)
+                          : "No captions available"}
+                      </Text>
+                      <Button
+                        size="sm"
+                        onClick={() => toggleShowMore(index)}
+                        variant="link"
+                        colorScheme="blue"
+                      >
+                        {showFullText[index] ? "Show Less" : "Show More"}
+                      </Button>
+                    </Box>
+                  </Stack>
+                </CardBody>
+              </Card>
+            ))}
           </VStack>
         </CardBody>
       </Card>
