@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
+import { YoutubeTranscript } from "youtube-transcript";
 
 const youtube = google.youtube({
   version: "v3",
@@ -21,65 +22,35 @@ export async function POST(req) {
       );
     }
 
-    // Calculate 24 hours ago
     const timeAgo = new Date();
     timeAgo.setHours(timeAgo.getHours() - 24);
 
-    // Search for videos - reduced to 50 results initially
+    // First search with minimal data to get just top 10 videos
     const searchResponse = await youtube.search.list({
-      part: ["id"], // Removed snippet to save quota
+      part: ["id"],
       q: keyword,
-      maxResults: 50, // Reduced from 250
-      order: "date",
+      maxResults: 10, // Reduced from 50 to 10
+      order: "viewCount", // Changed from date to viewCount to get popular videos directly
       publishedAfter: timeAgo.toISOString(),
       type: ["video"],
     });
 
-    // Get video details in batches of 50
+    // Single batch request for top 10 videos
     const videoIds = searchResponse.data.items.map((item) => item.id.videoId);
     const videoDetailsResponse = await youtube.videos.list({
       part: ["statistics", "snippet", "contentDetails"],
       id: videoIds,
     });
 
-    // Sort and get top 10 before fetching captions
-    const topVideos = videoDetailsResponse.data.items
-      .sort(
-        (a, b) =>
-          parseInt(b.statistics.viewCount) - parseInt(a.statistics.viewCount)
-      )
-      .slice(0, 10);
-
+    // Process videos without additional sorting
     const videos = await Promise.all(
-      topVideos.map(async (videoDetails) => {
+      videoDetailsResponse.data.items.map(async (videoDetails) => {
         const videoId = videoDetails.id;
 
-        // Optional: Only fetch captions if viewCount is above certain threshold
-        if (parseInt(videoDetails.statistics.viewCount) < 1000) {
-          return {
-            name: videoDetails.snippet.title,
-            description: videoDetails.snippet.description,
-            duration: videoDetails.contentDetails.duration.replace("PT", ""),
-            viewCount: videoDetails.statistics.viewCount,
-            link: `https://www.youtube.com/watch?v=${videoId}`,
-            captions: "",
-          };
-        }
-
-        // Get captions only for promising videos
         let captions = "";
         try {
-          const captionResponse = await youtube.captions.list({
-            part: ["snippet"],
-            videoId,
-          });
-
-          if (captionResponse.data.items?.length) {
-            const captionTrack = await youtube.captions.download({
-              id: captionResponse.data.items[0].id,
-            });
-            captions = captionTrack.data;
-          }
+          const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+          captions = transcript.map((item) => item.text).join(" ");
         } catch (error) {
           console.error(`Error fetching captions for video ${videoId}:`, error);
         }
