@@ -1,9 +1,10 @@
 "use client";
-import { ExternalLinkIcon, SearchIcon } from "@chakra-ui/icons";
+import { ChannelScrape } from "@/components/ChannelScrape";
+import VideoCard from "@/components/VideoCard";
+import { SearchIcon } from "@chakra-ui/icons";
 import {
   Alert,
   AlertIcon,
-  Box,
   Button,
   Card,
   CardBody,
@@ -13,12 +14,10 @@ import {
   Heading,
   Input,
   Spinner,
-  Stack,
-  Text,
   VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { IoMdEye, IoMdTime } from "react-icons/io";
+import { FaYoutube } from "react-icons/fa";
 
 const YouTubeCaptionViewer = () => {
   const [keyword, setKeyword] = useState("");
@@ -26,14 +25,6 @@ const YouTubeCaptionViewer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showFullText, setShowFullText] = useState({});
-
-  const decodeHtmlEntities = (text) => {
-    if (!text) return "";
-
-    return text
-      .replace(/&amp;#39;/g, "'") // Handle double-encoded quotes first
-      .replace(/&#39;/g, "'");
-  };
 
   const searchVideos = async () => {
     if (!keyword.trim()) {
@@ -68,29 +59,11 @@ const YouTubeCaptionViewer = () => {
     }
   };
 
-  const formatDuration = (duration) => {
-    console.log(duration);
-    // const minutes = parseInt(duration.match(/(\d+)M/)?.[1] || "0", 10);
-    // const seconds = parseInt(duration.match(/(\d+)S/)?.[1] || "0", 10);
-    return `Cool`;
-  };
-
   const toggleShowMore = (index) => {
     setShowFullText((prevState) => ({
       ...prevState,
       [index]: !prevState[index],
     }));
-  };
-
-  const formatPublishedDate = (dateString) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   return (
@@ -117,6 +90,7 @@ const YouTubeCaptionViewer = () => {
               {isLoading ? "Searching" : "Search"}
             </Button>
           </Flex>
+          <ChannelScrape />
 
           {error && (
             <Alert status="error" mt={4}>
@@ -125,92 +99,21 @@ const YouTubeCaptionViewer = () => {
             </Alert>
           )}
 
-          <VStack mt={6} spacing={4} align="stretch">
-            {videos.map((video, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <Flex justifyContent="space-between" alignItems="center">
-                    <Heading size="md">{video.name}</Heading>
-                    <Button
-                      as="a"
-                      href={video.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      size="sm"
-                      rightIcon={<ExternalLinkIcon />}
-                      bg="#FF0000"
-                      color="white"
-                      _hover={{ bg: "#FF0000", opacity: 0.8 }}
-                    >
-                      Watch
-                    </Button>
-                  </Flex>
-                  <Flex gap={4}>
-                    <Flex alignItems="center" gap={1}>
-                      <IoMdTime color="#FF0000" />
-                      <Text fontSize="sm" color="gray.500">
-                        {formatDuration(video.duration)}
-                      </Text>
-                    </Flex>
-                    <Flex alignItems="center" gap={1}>
-                      <IoMdEye color="#FF0000" />
-                      <Text fontSize="sm" color="gray.500">
-                        {parseInt(video.viewCount).toLocaleString()}
-                      </Text>
-                    </Flex>
-                    <Text fontSize="sm" color="gray.500">
-                      Published: {formatPublishedDate(video.publishedAt)}
-                    </Text>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  <Stack spacing={4}>
-                    <Box>
-                      <Heading size="sm" mb={2}>
-                        Description:
-                      </Heading>
-                      <Text
-                        fontSize="sm"
-                        whiteSpace="pre-wrap"
-                        noOfLines={showFullText[index] ? undefined : 5}
-                      >
-                        {video.description}
-                      </Text>
-                      <Button
-                        size="sm"
-                        onClick={() => toggleShowMore(index)}
-                        variant="link"
-                        colorScheme="blue"
-                      >
-                        {showFullText[index] ? "Show Less" : "Show More"}
-                      </Button>
-                    </Box>
-                    <Box>
-                      <Heading size="sm" mb={2}>
-                        Captions:
-                      </Heading>
-                      <Text
-                        fontSize="sm"
-                        whiteSpace="pre-wrap"
-                        noOfLines={showFullText[index] ? undefined : 5}
-                      >
-                        {video.captions
-                          ? decodeHtmlEntities(video.captions)
-                          : "No captions available"}
-                      </Text>
-                      <Button
-                        size="sm"
-                        onClick={() => toggleShowMore(index)}
-                        variant="link"
-                        colorScheme="blue"
-                      >
-                        {showFullText[index] ? "Show Less" : "Show More"}
-                      </Button>
-                    </Box>
-                  </Stack>
-                </CardBody>
-              </Card>
-            ))}
+          <VStack mt={12} gap={0} align="stretch">
+            <Heading display="flex" alignItems="center" gap={2}>
+              <FaYoutube /> Matching Videos
+            </Heading>
+            <VStack mt={6} spacing={4} align="stretch">
+              {videos.map((video, index) => (
+                <VideoCard
+                  key={index}
+                  video={video}
+                  index={index}
+                  showFullText={showFullText}
+                  toggleShowMore={toggleShowMore}
+                />
+              ))}
+            </VStack>
           </VStack>
         </CardBody>
       </Card>
